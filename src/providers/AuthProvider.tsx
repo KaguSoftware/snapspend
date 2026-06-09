@@ -1,35 +1,61 @@
-import type { Session } from "@supabase/supabase-js";
-import { createContext, useContext, useEffect, useState } from "react";
+// Auth context backed by the mock auth module for now (Supabase free-tier
+// limit — see BACKEND_NOTES.md). The context shape is what the Supabase
+// implementation will expose, so screens won't change.
 
-import { supabase } from "@/lib/supabase";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+
+import * as mockAuth from "@/lib/mockAuth";
+import type { MockUser } from "@/lib/mockAuth";
 
 interface AuthState {
-  session: Session | null;
+  user: MockUser | null;
   initializing: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (displayName: string, email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  updateUser: (patch: Partial<MockUser>) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthState>({ session: null, initializing: true });
+const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<MockUser | null>(null);
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+    mockAuth.getStoredUser().then((stored) => {
+      setUser(stored);
       setInitializing(false);
     });
-
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next);
-    });
-
-    return () => subscription.subscription.unsubscribe();
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ session, initializing }}>{children}</AuthContext.Provider>
+  const signIn = useCallback(async (email: string, password: string) => {
+    setUser(await mockAuth.signIn(email, password));
+  }, []);
+
+  const signUp = useCallback(async (displayName: string, email: string, password: string) => {
+    setUser(await mockAuth.signUp(displayName, email, password));
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await mockAuth.signOut();
+    setUser(null);
+  }, []);
+
+  const updateUser = useCallback(async (patch: Partial<MockUser>) => {
+    setUser(await mockAuth.updateUser(patch));
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, initializing, signIn, signUp, signOut, updateUser }),
+    [user, initializing, signIn, signUp, signOut, updateUser],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth(): AuthState {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
+}

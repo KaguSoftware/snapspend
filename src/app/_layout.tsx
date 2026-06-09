@@ -20,7 +20,7 @@ import { QueryProvider } from "@/providers/QueryProvider";
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
-  const { session, initializing } = useAuth();
+  const { user, initializing } = useAuth();
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -40,12 +40,12 @@ function RootNavigator() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={!!session}>
+      <Stack.Protected guard={!!user}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="receipt/[id]" />
         <Stack.Screen name="add-expense" options={{ presentation: "modal" }} />
       </Stack.Protected>
-      <Stack.Protected guard={!session}>
+      <Stack.Protected guard={!user}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
     </Stack>

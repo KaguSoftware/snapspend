@@ -1,56 +1,67 @@
-# Welcome to your Expo app 👋
+# SnapSpend 📸💸
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Snap a receipt → AI fills in the expense.** A cross-platform (iOS + Android)
+expense tracker built with the current React Native industry stack.
 
-## Get started
+> ⚠️ **Demo mode:** the app currently runs on a local mock data layer with
+> simulated AI extraction — we hit Supabase's free-project account limit during
+> development. The production backend (Postgres schema with RLS, private
+> storage, and a Claude-vision edge function) is written and deploy-ready in
+> [`supabase/`](supabase/). Details and the go-live checklist:
+> [BACKEND_NOTES.md](BACKEND_NOTES.md).
 
-1. Install dependencies
+## Features
 
-   ```bash
-   npm install
-   ```
+- **Receipt scanning** — camera or gallery, with an animated processing state
+  while AI extracts the merchant, date, total, category, and line items
+- **Dashboard** — monthly spend with a month switcher, category donut chart
+  (Skia-rendered), and a transaction list with pull-to-refresh
+- **Edit anything** — receipt detail screen with image, editable fields,
+  category chips, and line items; manual expense entry modal
+- **Onboarding + auth** — swipeable intro slides, sign in / sign up flow with
+  protected routes
+- **Polish** — dark mode, Inter typography, haptics, skeleton loaders, empty
+  states, Reanimated transitions
 
-2. Start the app
+## Stack
 
-   ```bash
-   npx expo start
-   ```
+| Layer | Tech |
+| --- | --- |
+| Framework | Expo SDK 56 · React Native 0.85 · React 19 · TypeScript (strict) |
+| Navigation | Expo Router (file-based, typed routes, protected stacks) |
+| Styling | NativeWind 4 (Tailwind) · dark mode · Inter via expo-font |
+| Data | TanStack Query 5 · AsyncStorage repo (mock) → Supabase (planned) |
+| Charts | victory-native 41 (Skia) |
+| AI | Claude vision (`claude-opus-4-8`) with strict JSON schema — edge function ready in `supabase/functions/extract-receipt/` |
+| Builds | EAS (dev / preview / production profiles in `eas.json`) |
 
-In the output, you'll find options to open the app in a
+## Run it
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```sh
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Scan the QR code with **Expo Go** (iOS/Android) or press `a` for an Android
+emulator. Sign up with any email/password (mock auth), then scan any photo —
+extraction is simulated in demo mode.
 
-### Other setup steps
+### Scripts
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```sh
+npm run typecheck   # tsc --noEmit
+npm run lint        # expo lint (eslint)
+```
 
-## Learn more
+## Project layout
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```text
+src/
+  app/            # Expo Router screens: (auth), (tabs), receipt/[id], add-expense
+  components/     # CategoryDonut, TransactionRow, MonthSwitcher, ui/ kit
+  lib/            # types, categories, format, queries (TanStack), data/ (mock repo)
+  providers/      # AuthProvider, QueryProvider
+supabase/
+  migrations/     # 0001_init.sql — schema, RLS, storage policies (deploy-ready)
+  functions/      # extract-receipt — Claude vision edge function (deploy-ready)
+```
